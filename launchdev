@@ -1,0 +1,5 @@
+#!/bin/bash
+make clean
+gedit *.ml &
+gedit Makefile
+$SHELL

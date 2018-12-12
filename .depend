@@ -1,0 +1,12 @@
+algo.cmo :
+algo.cmx :
+dict.cmo :
+dict.cmx :
+display.cmo : grid.cmo
+display.cmx : grid.cmx
+grid.cmo :
+grid.cmx :
+main.cmo : grid.cmo display.cmo dict.cmo
+main.cmx : grid.cmx display.cmx dict.cmx
+word.cmo :
+word.cmx :

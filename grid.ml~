@@ -1,0 +1,117 @@
+(***********************************************************************)
+(*                                                                     *)
+(*         Crosswords (algorithm for generating crosswords)            *)
+(*                                                                     *)
+(*     Alexandre Loheac, Dina Capelle, Paul Watfeh, Maxime Le Du       *)
+(*						Ecole Nationale de l'Aviation Civile  	       *)
+(*                                                                     *)
+(*  Copyright 2017 Ecole Nationale de l'Aviation Civile.               *)
+(*  All rights reserved.  This file is distributed under the terms of  *)
+(*  the GNU Library General Public License v3.                         *)
+(*                                                                     *)
+(***********************************************************************)
+
+
+let empty_char = '_' and
+	shaded_char = '#';;
+	
+type data_type = | Empty | Shaded | Char of char;;
+type style_type = | Fixed | Changeable;;
+
+type direction = 
+	| Up
+	| Down
+	| Left
+	| Right;;
+
+type box = {
+	mutable data:	data_type;
+    mutable style: 	style_type;
+    mutable word :	(direction * int * int * int) list};;
+    
+type grid = {
+    grid: 	box array array;
+    width:	int;
+    height:	int};;
+
+let is_in_bounds i j grid = j >= grid.height || i >= grid.width;;
+
+let load_grid fd = 
+	let rec aux l = 
+		try aux ((String.trim (input_line fd))::l)
+		with End_of_file -> List.rev l in
+	let raw = aux [] in
+	
+	let l = List.map (fun a -> String.length a) raw in
+	let w = List.fold_left max 0 l
+	and h = List.length raw in
+	let g = {grid = Array.make h [||];
+			 width = w;
+			 height = h} in
+	for j = 0 to h-1 do g.grid.(j) <- Array.init w (fun _ -> {data = Empty;
+													style = Changeable;
+													word =	[]}) done;
+	
+	let rec browse j r = match r,j with
+		| [],_ -> g
+		| s::tl,_ -> for i = 0 to w-1 do 
+						let c = String.get s i in
+						if c <> empty_char then g.grid.(j).(i).style <- Fixed;
+						if c = empty_char then g.grid.(j).(i).data <- Empty
+						else if c = shaded_char then g.grid.(j).(i).data <- Shaded
+						else g.grid.(j).(i).data <- Char(c) done;
+						browse (j+1) tl in
+	browse 0 raw;;
+
+let print_grid g = 
+	for j = 0 to g.height-1 do
+		for i = 0 to g.width-1 do match g.grid.(j).(i).data with
+			| Empty -> Printf.printf " "
+			| Shaded -> Printf.printf "%c" (Char.chr 219)
+			| Char(c) -> Printf.printf "%c" c 
+		done;
+		Printf.printf "\n" done;;
+
+type word = {
+    i: int;
+    j:int;
+    dir:direction;
+    lettres:char array;
+    domain:string list};;
+
+
+let word_init x y d t dict =
+  {i   = x;
+   j   = y;
+   dir = d;
+   lettres  = Array.make t '?';
+   domain = dict.(t)};;
+
+   
+   
+let find_words g fd dict =
+  let debut_hor = ref 0 in
+  let debut_ver = ref 0 in
+  let hor = ref [] in
+  let ver = ref [] in
+  let h = g.height -1 in
+  let w = g.width -1 in
+  for j = 0 to h do
+    for i = 0 to w do
+      if ( g.grid.(j).(i).data == Shaded || i == w) then begin
+        if( i - !debut_hor > 1) then
+          hor := (word_init !debut_hor j Left (i - !debut_hor) dict)::(!hor);
+        debut_hor := (!debut_hor +1) mod h;
+      end;
+      if ( g.grid.(j).(i).data == Shaded || j == h) then begin
+        if( i - !debut_hor > 1) then
+          ver := (word_init !debut_ver i Down (j - !debut_ver) dict)::(!ver);
+        debut_ver := (!debut_ver +1) mod w;
+      end;
+      
+                    
+            
+          
+    done;
+  done;
+;;
